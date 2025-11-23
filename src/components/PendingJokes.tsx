@@ -48,7 +48,7 @@ export default function PendingJokes() {
     try {
       // Update the approval status
       const approvalField = `approved_by_${approver}`;
-      const { data: joke, error: fetchError } = await supabase
+      const { error: fetchError } = await supabase
         .from('pending_jokes')
         .select('*')
         .eq('id', jokeId)

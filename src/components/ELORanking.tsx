@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { calculateElo } from '../utils/elo';
-import type { Joke, EloRating } from '../types';
+import type { Joke } from '../types';
 
 export default function ELORanking() {
   const [joke1, setJoke1] = useState<Joke | null>(null);

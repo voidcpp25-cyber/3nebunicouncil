@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Joke, EloRating, DetailedRating } from '../types';
+import type { Joke, DetailedRating } from '../types';
 
 interface JokeWithRatings extends Joke {
   elo_score?: number;

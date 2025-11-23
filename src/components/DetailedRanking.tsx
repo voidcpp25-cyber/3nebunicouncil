@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Joke, DetailedRating } from '../types';
+import type { Joke } from '../types';
 
 export default function DetailedRanking() {
   const [currentJoke, setCurrentJoke] = useState<Joke | null>(null);
@@ -135,12 +135,10 @@ export default function DetailedRanking() {
       
       if (existingRatingId) {
         // Update existing rating
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('detailed_ratings')
           .update(ratingData)
-          .eq('id', existingRatingId)
-          .select()
-          .single();
+          .eq('id', existingRatingId);
 
         if (error) throw error;
         ratingId = existingRatingId;
