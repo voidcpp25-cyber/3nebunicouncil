@@ -32,8 +32,12 @@ export default function ELORanking() {
         return;
       }
 
-      // Get random jokes
-      const shuffled = [...jokes].sort(() => Math.random() - 0.5);
+      // Get truly random jokes using Fisher-Yates shuffle
+      const shuffled = [...jokes];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       const selected1 = shuffled[0];
       const selected2 = shuffled[1];
 
@@ -102,7 +106,7 @@ export default function ELORanking() {
       setMessage('Rating updated! Loading next comparison...');
       setTimeout(() => {
         fetchRandomJokes();
-      }, 2000); // Give time to see the ELO scores
+      }, 500); // Quick transition
     } catch (error) {
       console.error('Error updating ELO:', error);
       setMessage('Error updating rating. Please try again.');
@@ -119,7 +123,7 @@ export default function ELORanking() {
     setMessage('You can only rank jokes you experienced. Loading next comparison...');
     setTimeout(() => {
       fetchRandomJokes();
-    }, 1500);
+    }, 500);
   };
 
   if (loading && !joke1 && !joke2) {

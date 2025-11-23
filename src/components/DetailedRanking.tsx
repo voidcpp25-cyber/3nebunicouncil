@@ -214,7 +214,7 @@ export default function DetailedRanking() {
 
       <div className="ratings-container">
         <div className="rating-item">
-          <label>Funniness 😂 (1-10)</label>
+          <label>Funniness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -240,7 +240,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Relevance 🏆 (1-10)</label>
+          <label>Relevance (1-10)</label>
           <input
             type="range"
             min="1"
@@ -266,7 +266,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Iconic-ness 🌟 (1-10)</label>
+          <label>Iconic-ness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -292,7 +292,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>How Lost It Would Have Been 🗓️ (1-10)</label>
+          <label>How Lost It Would Have Been (1-10)</label>
           <input
             type="range"
             min="1"
@@ -318,7 +318,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Quality 💎 (1-10)</label>
+          <label>Quality (1-10)</label>
           <input
             type="range"
             min="1"
@@ -344,7 +344,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Oldness 🎂 (1-10)</label>
+          <label>Oldness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -370,7 +370,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Decipherability 📟 (1-10) - Not included in overall</label>
+          <label>Decipherability (1-10) - Not included in overall</label>
           <input
             type="range"
             min="1"
@@ -396,7 +396,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Overall Quality ⭐ (1-10) - Not included in overall score</label>
+          <label>Overall Quality (1-10) - Not included in overall score</label>
           <input
             type="range"
             min="1"

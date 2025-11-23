@@ -1,5 +1,5 @@
 // ELO rating calculation
-const K_FACTOR = 32;
+const K_FACTOR = 100; // Increased for more dramatic ELO changes
 
 export function calculateElo(
   winnerElo: number,

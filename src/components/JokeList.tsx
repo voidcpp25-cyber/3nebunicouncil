@@ -242,7 +242,7 @@ export default function JokeList() {
             className="refresh-btn"
             disabled={loading}
           >
-            🔄 Refresh
+            Refresh
           </button>
           <div className="sort-controls">
             <label htmlFor="sort-select">Sort by:</label>
@@ -255,12 +255,12 @@ export default function JokeList() {
               <option value="none">Newest First</option>
               <option value="elo">ELO Ranking</option>
               <option value="overall_score">Overall Score</option>
-              <option value="funniness">Funniness 😂</option>
-              <option value="relevance">Relevance 🏆</option>
-              <option value="iconicness">Iconic-ness 🌟</option>
-              <option value="quality">Quality 💎</option>
-              <option value="oldness">Oldness 🎂</option>
-              <option value="overall_quality">Overall Quality ⭐</option>
+              <option value="funniness">Funniness</option>
+              <option value="relevance">Relevance</option>
+              <option value="iconicness">Iconic-ness</option>
+              <option value="quality">Quality</option>
+              <option value="oldness">Oldness</option>
+              <option value="overall_quality">Overall Quality</option>
             </select>
           </div>
         </div>
