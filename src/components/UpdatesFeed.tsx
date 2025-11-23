@@ -38,6 +38,19 @@ export default function UpdatesFeed() {
 
   if (loading) return <p>Loading updates...</p>;
 
+  // Annotate with previous rank (older record for same joke)
+  const annotated = (() => {
+    const prevMap = new Map<string, number>();
+    const out: (EloUpdate & { prevRank: number | null })[] = new Array(updates.length);
+    for (let i = updates.length - 1; i >= 0; i--) {
+      const u = updates[i];
+      const prevRank = prevMap.has(u.joke_id) ? prevMap.get(u.joke_id)! : null;
+      out[i] = { ...u, prevRank };
+      prevMap.set(u.joke_id, u.rank);
+    }
+    return out;
+  })();
+
   return (
     <div className="updates-feed">
       <div className="list-header">
@@ -48,10 +61,16 @@ export default function UpdatesFeed() {
         <p>No updates yet.</p>
       ) : (
         <div className="updates-list">
-          {updates.map((item) => (
+          {annotated.map((item) => (
             <div key={item.id} className="update-card">
               <div className="update-title">
-                <strong>{item.joke_text}</strong> → #{item.rank} · ELO {item.elo_score}
+                <strong>{item.joke_text}</strong>
+                {item.prevRank ? (
+                  <> went from #{item.prevRank} to <span className="update-rank-badge">#{item.rank}</span></>
+                ) : (
+                  <> is now <span className="update-rank-badge">#{item.rank}</span></>
+                )}
+                {' '}· ELO {item.elo_score}
               </div>
               <div className="update-meta">
                 {new Date(item.created_at).toLocaleString()}

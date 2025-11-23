@@ -5,8 +5,9 @@ import EditRating from './EditRating';
 
 import {
   FaSync, FaEdit, FaLaugh, FaTrophy, FaStar, FaGem, FaBirthdayCake,
-  FaStarHalfAlt, FaChartBar, FaMedal
+  FaStarHalfAlt, FaChartBar, FaMedal, FaChartLine
 } from 'react-icons/fa';
+import JokeAnalytics from './JokeAnalytics';
 
 interface JokeWithRatings extends Joke {
   elo_score?: number;
@@ -39,6 +40,7 @@ export default function JokeList() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [editingJoke, setEditingJoke] = useState<Joke | null>(null);
+  const [analyticsJoke, setAnalyticsJoke] = useState<Joke | null>(null);
 
   useEffect(() => {
     fetchJokes();
@@ -250,12 +252,21 @@ export default function JokeList() {
 
                 </div>
 
-                <button
-                  onClick={() => setEditingJoke(joke)}
-                  className="edit-rating-btn"
-                >
-                  <FaEdit /> Edit Rating
-                </button>
+                <div className="card-actions">
+                  <button
+                    onClick={() => setEditingJoke(joke)}
+                    className="edit-rating-btn"
+                  >
+                    <FaEdit /> Edit Rating
+                  </button>
+                  <button
+                    onClick={() => setAnalyticsJoke(joke)}
+                    className="analytics-btn"
+                    title="View ELO history"
+                  >
+                    <FaChartLine /> Analytics
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -270,6 +281,12 @@ export default function JokeList() {
             fetchJokes();
             setEditingJoke(null);
           }}
+        />
+      )}
+      {analyticsJoke && (
+        <JokeAnalytics
+          joke={analyticsJoke}
+          onClose={() => setAnalyticsJoke(null)}
         />
       )}
     </div>

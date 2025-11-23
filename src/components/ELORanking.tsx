@@ -158,6 +158,26 @@ export default function ELORanking() {
 
     if (lErr) console.error('Loser ELO update failed:', lErr);
 
+    // Log history for analytics (non-blocking)
+    try {
+      await supabase.from('elo_history').insert([
+        {
+          joke_id: winnerId,
+          elo_before: winnerElo,
+          elo_after: newWinnerElo,
+          delta: winnerDelta,
+        },
+        {
+          joke_id: loserId,
+          elo_before: loserElo,
+          elo_after: newLoserElo,
+          delta: loserDelta,
+        }
+      ]);
+    } catch (e) {
+      console.error('ELO history insert failed (non-blocking):', e);
+    }
+
     setMessage('Updated! Showing results...');
 
     setTimeout(() => {
