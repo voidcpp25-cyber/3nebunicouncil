@@ -10,8 +10,11 @@ export default function ELORanking() {
   const [joke2, setJoke2] = useState<Joke | null>(null);
   const [elo1, setElo1] = useState(1500);
   const [elo2, setElo2] = useState(1500);
+  const [eloDelta1, setEloDelta1] = useState<number | null>(null);
+  const [eloDelta2, setEloDelta2] = useState<number | null>(null);
 
   const [showElo, setShowElo] = useState(false);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -67,6 +70,9 @@ export default function ELORanking() {
 
     setLoading(true);
     setShowElo(false);
+    setWinnerId(null);
+    setEloDelta1(null);
+    setEloDelta2(null);
     setMessage('');
 
     let one = jokes[Math.floor(Math.random() * jokes.length)];
@@ -104,17 +110,24 @@ export default function ELORanking() {
     const loserElo = isWinnerJ1 ? elo2 : elo1;
 
     const { newWinnerElo, newLoserElo } = calculateElo(winnerElo, loserElo);
+    const winnerDelta = Math.round(newWinnerElo - winnerElo);
+    const loserDelta = Math.round(newLoserElo - loserElo);
 
     // Update UI immediately
     if (isWinnerJ1) {
       setElo1(newWinnerElo);
       setElo2(newLoserElo);
+      setEloDelta1(winnerDelta);
+      setEloDelta2(loserDelta);
     } else {
       setElo1(newLoserElo);
       setElo2(newWinnerElo);
+      setEloDelta1(loserDelta);
+      setEloDelta2(winnerDelta);
     }
 
     setShowElo(true);
+    setWinnerId(winnerId);
 
     // Update DB (IMPORTANT: onConflict ensures UPDATE not INSERT)
     const { error: wErr } = await supabase
@@ -145,11 +158,11 @@ export default function ELORanking() {
 
     if (lErr) console.error('Loser ELO update failed:', lErr);
 
-    setMessage('Updated! Loading next pair...');
+    setMessage('Updated! Showing results...');
 
     setTimeout(() => {
       loadNewPair();
-    }, 700);
+    }, 1500);
   };
 
   // -------------------------------
@@ -170,10 +183,21 @@ export default function ELORanking() {
 
       <div className="comparison-container">
         {/* Joke 1 */}
-        <div className="joke-card">
+        <div className={`joke-card ${winnerId === joke1.id ? 'winner' : ''} ${showElo ? 'revealed' : ''}`}>
           <div className="joke-text">{joke1.text}</div>
 
-          {showElo ? <div className="elo-score">ELO: {elo1}</div> : <div className="elo-score-placeholder">ELO: ???</div>}
+          {showElo ? (
+            <div className="elo-score">
+              <div>ELO: {elo1}</div>
+              {eloDelta1 !== null && (
+                <div className={`elo-delta ${eloDelta1 >= 0 ? 'up' : 'down'}`}>
+                  {eloDelta1 >= 0 ? '+' : ''}{eloDelta1}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="elo-score-placeholder">ELO: ???</div>
+          )}
 
           <button
             className="choose-btn"
@@ -184,13 +208,24 @@ export default function ELORanking() {
           </button>
         </div>
 
-        <div className="vs">VS</div>
+        <div className={`vs ${showElo ? 'vs-pulse' : ''}`}>VS</div>
 
         {/* Joke 2 */}
-        <div className="joke-card">
+        <div className={`joke-card ${winnerId === joke2.id ? 'winner' : ''} ${showElo ? 'revealed' : ''}`}>
           <div className="joke-text">{joke2.text}</div>
 
-          {showElo ? <div className="elo-score">ELO: {elo2}</div> : <div className="elo-score-placeholder">ELO: ???</div>}
+          {showElo ? (
+            <div className="elo-score">
+              <div>ELO: {elo2}</div>
+              {eloDelta2 !== null && (
+                <div className={`elo-delta ${eloDelta2 >= 0 ? 'up' : 'down'}`}>
+                  {eloDelta2 >= 0 ? '+' : ''}{eloDelta2}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="elo-score-placeholder">ELO: ???</div>
+          )}
 
           <button
             className="choose-btn"

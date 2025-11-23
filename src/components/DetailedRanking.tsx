@@ -118,11 +118,18 @@ export default function DetailedRanking() {
   }, []);
 
   const calculateOverall = () => {
-    // Calculate overall from all metrics EXCEPT decipherability and overall_quality
-    const { decipherability, overall_quality, ...metricsForOverall } = ratings;
-    const values = Object.values(metricsForOverall);
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return Number((sum / values.length).toFixed(1));
+    const clampNeutral = (v: number) => Math.min(10, Math.max(5, v)); // floor at 5 so memory-style metrics never penalize
+    const { funniness, relevance, iconicness, quality, oldness, how_lost } = ratings;
+
+    const score =
+      0.35 * funniness +
+      0.20 * relevance +
+      0.15 * iconicness +
+      0.15 * quality +
+      0.05 * clampNeutral(oldness) +
+      0.10 * clampNeutral(how_lost);
+
+    return Number(score.toFixed(2));
   };
 
   const handleSubmit = async () => {
@@ -455,7 +462,7 @@ export default function DetailedRanking() {
 
         <div className="overall-score">
           <strong>Overall Score: {overallScore.toFixed(1)}</strong>
-          <small>(Average of all metrics except Decipherability and Overall Quality)</small>
+          <small>(Weighted: funniness/relevance/iconicness/quality + neutralized oldness/how_lost)</small>
         </div>
       </div>
 

@@ -79,10 +79,18 @@ export default function EditRating({ joke, onClose, onUpdate }: EditRatingProps)
   };
 
   const calculateOverall = () => {
-    const { decipherability, overall_quality, ...metricsForOverall } = ratings;
-    const values = Object.values(metricsForOverall);
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return Number((sum / values.length).toFixed(1));
+    const clampNeutral = (v: number) => Math.min(10, Math.max(5, v)); // floor at 5 to avoid penalizing memory-style metrics
+    const { funniness, relevance, iconicness, quality, oldness, how_lost } = ratings;
+
+    const score =
+      0.35 * funniness +
+      0.20 * relevance +
+      0.15 * iconicness +
+      0.15 * quality +
+      0.05 * clampNeutral(oldness) +
+      0.10 * clampNeutral(how_lost);
+
+    return Number(score.toFixed(2));
   };
 
   const handleSubmit = async () => {
@@ -386,10 +394,10 @@ export default function EditRating({ joke, onClose, onUpdate }: EditRatingProps)
             <span>{ratings.overall_quality.toFixed(1)}</span>
           </div>
 
-          <div className="overall-score">
-            <strong>Overall Score: {overallScore.toFixed(1)}</strong>
-            <small>(Average of all metrics except Decipherability and Overall Quality)</small>
-          </div>
+        <div className="overall-score">
+          <strong>Overall Score: {overallScore.toFixed(1)}</strong>
+          <small>(Weighted: funniness/relevance/iconicness/quality + neutralized oldness/how_lost)</small>
+        </div>
         </div>
 
         {message && (

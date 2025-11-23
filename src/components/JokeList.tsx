@@ -21,6 +21,15 @@ interface JokeWithRatings extends Joke {
   rating_count?: number;
 }
 
+interface EloUpdate {
+  id: string;
+  joke_id: string;
+  joke_text: string;
+  rank: number;
+  elo_score: number;
+  created_at: string;
+}
+
 type SortOption =
   | 'none'
   | 'elo'
@@ -36,11 +45,16 @@ export default function JokeList() {
   const [allJokes, setAllJokes] = useState<JokeWithRatings[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('none');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [eloUpdates, setEloUpdates] = useState<EloUpdate[]>([]);
+  const [topSince, setTopSince] = useState<Date | null>(null);
+  const [showUpdates, setShowUpdates] = useState(true);
   const [loading, setLoading] = useState(true);
   const [editingJoke, setEditingJoke] = useState<Joke | null>(null);
 
   useEffect(() => {
     fetchJokes();
+    fetchEloUpdates();
   }, []);
 
   async function fetchJokes() {
@@ -102,7 +116,9 @@ export default function JokeList() {
         };
       });
 
-      setAllJokes(combined);
+      // Hide jokes with no ratings to avoid empty data
+      const withVotes = combined.filter(j => (j.rating_count ?? 0) > 0);
+      setAllJokes(withVotes);
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -110,41 +126,78 @@ export default function JokeList() {
     }
   }
 
-  const filteredJokes = useMemo(() => {
-    if (!searchQuery.trim()) return allJokes;
-    const q = searchQuery.toLowerCase();
-    return allJokes.filter(j => j.text.toLowerCase().includes(q));
-  }, [searchQuery, allJokes]);
+  async function fetchEloUpdates() {
+    try {
+      const { data, error } = await supabase
+        .from('elo_updates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setEloUpdates(data || []);
+      const latestTop = (data || []).find(u => u.rank === 1);
+      if (latestTop) setTopSince(new Date(latestTop.created_at));
+    } catch (err) {
+      console.error('Fetch updates error:', err);
+    }
+  }
 
-  const sortedJokes = useMemo(() => {
-    const arr = [...filteredJokes];
+  const sortedAllJokes = useMemo(() => {
+    const arr = [...allJokes];
+
+    const direction = sortDir === 'asc' ? 1 : -1;
 
     if (sortBy === 'none') {
       return arr.sort((a, b) =>
-        new Date(b.created_at || 0).getTime() -
-        new Date(a.created_at || 0).getTime()
+        direction === 1
+          ? new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+          : new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
     }
 
-    return arr.sort((a, b) => {
-      const getValue = (j: JokeWithRatings) => {
-        switch (sortBy) {
-          case 'elo': return j.elo_score ?? 0;
-          case 'overall_score': return j.avg_overall_score ?? 0;
-          case 'funniness': return j.avg_funniness ?? 0;
-          case 'relevance': return j.avg_relevance ?? 0;
-          case 'iconicness': return j.avg_iconicness ?? 0;
-          case 'quality': return j.avg_quality ?? 0;
-          case 'oldness': return j.avg_oldness ?? 0;
-          case 'overall_quality': return j.avg_overall_quality ?? 0;
-        }
-      };
+    const getValue = (j: JokeWithRatings) => {
+      switch (sortBy) {
+        case 'elo': return j.elo_score ?? 0;
+        case 'overall_score': return j.avg_overall_score ?? 0;
+        case 'funniness': return j.avg_funniness ?? 0;
+        case 'relevance': return j.avg_relevance ?? 0;
+        case 'iconicness': return j.avg_iconicness ?? 0;
+        case 'quality': return j.avg_quality ?? 0;
+        case 'oldness': return j.avg_oldness ?? 0;
+        case 'overall_quality': return j.avg_overall_quality ?? 0;
+        default: return 0;
+      }
+    };
 
-      return getValue(b) - getValue(a);
-    });
-  }, [sortBy, filteredJokes]);
+    return arr.sort((a, b) =>
+      direction === 1 ? getValue(a) - getValue(b) : getValue(b) - getValue(a)
+    );
+  }, [sortBy, sortDir, allJokes]);
+
+  const rankMap = useMemo(() => {
+    const map = new Map<string, number>();
+    sortedAllJokes.forEach((j, idx) => map.set(j.id, idx + 1));
+    return map;
+  }, [sortedAllJokes]);
+
+  const filteredJokes = useMemo(() => {
+    if (!searchQuery.trim()) return sortedAllJokes;
+    const q = searchQuery.toLowerCase();
+    return sortedAllJokes.filter(j => j.text.toLowerCase().includes(q));
+  }, [searchQuery, sortedAllJokes]);
 
   const format = (v?: number) => v === undefined ? 'N/A' : v.toFixed(1);
+  const formatDuration = (since: Date | null) => {
+    if (!since) return '–';
+    const ms = Date.now() - since.getTime();
+    if (ms < 60_000) return 'just now';
+    const mins = Math.floor(ms / 60000);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  };
 
   if (loading) return <p>Loading jokes...</p>;
 
@@ -180,62 +233,126 @@ export default function JokeList() {
             <option value="oldness">Oldness</option>
             <option value="overall_quality">Overall Quality</option>
           </select>
+
+          <button
+            className="sort-dir-btn"
+            onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
+          >
+            {sortDir === 'asc' ? 'Asc' : 'Desc'}
+          </button>
+
+          <button
+            className="updates-toggle-btn"
+            onClick={() => setShowUpdates(v => !v)}
+          >
+            {showUpdates ? 'Hide updates' : 'Show recent updates'}
+          </button>
         </div>
       </div>
 
-      <div className="jokes-grid">
-        {sortedJokes.map((joke, idx) => (
-          <div key={joke.id} className="joke-card-list">
-            <div className="joke-rank">#{idx + 1}</div>
-
-            <div className="joke-content">
-              <h3>{joke.text}</h3>
-
-              <div className="joke-stats">
-                {joke.elo_score !== undefined && (
-                  <div className="stat-item"><FaMedal /> {joke.elo_score}</div>
-                )}
-
-                {joke.avg_overall_score !== undefined && (
-                  <div className="stat-item"><FaChartBar /> {format(joke.avg_overall_score)}</div>
-                )}
-
-                {joke.avg_funniness !== undefined && (
-                  <div className="stat-item"><FaLaugh /> {format(joke.avg_funniness)}</div>
-                )}
-
-                {joke.avg_relevance !== undefined && (
-                  <div className="stat-item"><FaTrophy /> {format(joke.avg_relevance)}</div>
-                )}
-
-                {joke.avg_iconicness !== undefined && (
-                  <div className="stat-item"><FaStar /> {format(joke.avg_iconicness)}</div>
-                )}
-
-                {joke.avg_quality !== undefined && (
-                  <div className="stat-item"><FaGem /> {format(joke.avg_quality)}</div>
-                )}
-
-                {joke.avg_oldness !== undefined && (
-                  <div className="stat-item"><FaBirthdayCake /> {format(joke.avg_oldness)}</div>
-                )}
-
-                {joke.avg_overall_quality !== undefined && (
-                  <div className="stat-item"><FaStarHalfAlt /> {format(joke.avg_overall_quality)}</div>
-                )}
-
-              </div>
-
-              <button
-                onClick={() => setEditingJoke(joke)}
-                className="edit-rating-btn"
-              >
-                <FaEdit /> Edit Rating
-              </button>
+      {showUpdates && (
+        <div className="updates-panel">
+          <div className="updates-header">
+            <h3>Recent leaderboard changes</h3>
+            <div className="top-duration">
+              Current #1 for {formatDuration(topSince)}
             </div>
           </div>
-        ))}
+          {eloUpdates.length === 0 && <p className="muted">No changes yet.</p>}
+          <ul>
+            {eloUpdates.map((item) => (
+              <li key={`${item.id}-${item.created_at}`}>
+                <div className="update-title">
+                  <strong>{item.joke_text.toUpperCase()}</strong> has taken <span className="update-rank-badge">#{item.rank}</span> on the ELO leaderboard.
+                </div>
+                <div className="update-meta">
+                  <span>{new Date(item.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                  <span className="update-rank">#{item.rank}</span>
+                  {item.elo_score !== undefined && (
+                    <span className="update-score">ELO: {item.elo_score}</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="jokes-grid">
+        {filteredJokes.map((joke) => {
+          const rank = rankMap.get(joke.id) ?? '-';
+          return (
+            <div key={joke.id} className="joke-card-list">
+              <div className="joke-rank">#{rank}</div>
+
+              <div className="joke-content">
+                <h3>{joke.text}</h3>
+
+                <div className="joke-stats">
+                  {joke.elo_score !== undefined && (
+                    <div className="stat-item"><FaMedal /> {joke.elo_score}</div>
+                  )}
+
+                  {joke.avg_overall_score !== undefined && (
+                    <div className="stat-item"><FaChartBar /> {format(joke.avg_overall_score)}</div>
+                  )}
+
+                  {joke.avg_funniness !== undefined && (
+                    <div className="stat-item"><FaLaugh /> {format(joke.avg_funniness)}</div>
+                  )}
+
+                  {joke.avg_relevance !== undefined && (
+                    <div className="stat-item"><FaTrophy /> {format(joke.avg_relevance)}</div>
+                  )}
+
+                  {joke.avg_iconicness !== undefined && (
+                    <div className="stat-item"><FaStar /> {format(joke.avg_iconicness)}</div>
+                  )}
+
+                  {joke.avg_quality !== undefined && (
+                    <div className="stat-item"><FaGem /> {format(joke.avg_quality)}</div>
+                  )}
+
+                  {joke.avg_oldness !== undefined && (
+                    <div className="stat-item"><FaBirthdayCake /> {format(joke.avg_oldness)}</div>
+                  )}
+
+                  {joke.avg_overall_quality !== undefined && (
+                    <div className="stat-item"><FaStarHalfAlt /> {format(joke.avg_overall_quality)}</div>
+                  )}
+
+                </div>
+
+                <button
+                  onClick={() => setEditingJoke(joke)}
+                  className="edit-rating-btn"
+                >
+                  <FaEdit /> Edit Rating
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      <aside className="updates-panel">
+        <h3>Recent #1 Changes</h3>
+        {eloUpdates.length === 0 && <p className="muted">No changes yet.</p>}
+        <ul>
+          {eloUpdates.map((item) => (
+            <li key={item.id}>
+              <div className="update-title">
+                <strong>{item.joke_text}</strong> has taken <span className="update-rank-badge">#{item.rank}</span> on the ELO leaderboard.
+              </div>
+              <div className="update-meta">
+                <span>{new Date(item.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                <span className="update-rank">#{item.rank}</span>
+                <span className="update-score">ELO: {item.elo_score}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </aside>
 
       {editingJoke && (
         <EditRating
