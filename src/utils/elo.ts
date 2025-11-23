@@ -109,9 +109,8 @@ export function calculateAdvancedElo(
     loseDelta *= favoriteDiscount;
   }
 
-  // 10. Anti-inflation: zero-sum constraint
-  const totalDelta = winDelta + Math.abs(loseDelta);
-  const inflationFactor = 0.98; // slight deflation
+  // 10. Anti-inflation: slight deflation
+  const inflationFactor = 0.98;
   winDelta *= inflationFactor;
   loseDelta *= inflationFactor;
 
@@ -125,8 +124,7 @@ export function calculateAdvancedElo(
     loserStats.games,
     winnerVol,
     loserVol,
-    cfg.minGames,
-    cfg.confidenceThreshold
+    cfg.minGames
   );
 
   return {
@@ -245,8 +243,7 @@ function calculateConfidence(
   loserGames: number,
   winnerVol: number,
   loserVol: number,
-  minGames: number,
-  threshold: number
+  minGames: number
 ): number {
   const gameConfidence = Math.min(
     winnerGames / minGames,
