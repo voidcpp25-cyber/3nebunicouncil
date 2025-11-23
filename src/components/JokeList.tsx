@@ -224,9 +224,6 @@ export default function JokeList() {
                   <div className="stat-item"><FaStarHalfAlt /> {format(joke.avg_overall_quality)}</div>
                 )}
 
-                {joke.rating_count !== undefined && (
-                  <div className="stat-item">Ratings: {joke.rating_count}</div>
-                )}
               </div>
 
               <button
