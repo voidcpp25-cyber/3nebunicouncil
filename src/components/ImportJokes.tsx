@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { importJokesFromText } from '../utils/importJokes';
+import { FaDownload } from 'react-icons/fa';
 
 export default function ImportJokes() {
   const [fileContent, setFileContent] = useState('');
@@ -49,7 +50,7 @@ export default function ImportJokes() {
         onClick={handleImport}
         disabled={loading || !fileContent.trim()}
       >
-        {loading ? 'Importing...' : 'Import Jokes'}
+        {loading ? 'Importing...' : <><FaDownload /> Import Jokes</>}
       </button>
 
       {results.length > 0 && (

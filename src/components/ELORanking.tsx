@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { calculateElo } from '../utils/elo';
 import type { Joke } from '../types';
+import { FaCheck, FaTimes, FaForward } from 'react-icons/fa';
 
 export default function ELORanking() {
   const [joke1, setJoke1] = useState<Joke | null>(null);
@@ -17,12 +18,11 @@ export default function ELORanking() {
     setMessage('');
     
     try {
-      // Fetch two random official jokes
+      // Fetch all official jokes for better randomness
       const { data: jokes, error } = await supabase
         .from('jokes')
         .select('*')
-        .eq('is_official', true)
-        .limit(100);
+        .eq('is_official', true);
 
       if (error) throw error;
 
@@ -32,14 +32,33 @@ export default function ELORanking() {
         return;
       }
 
-      // Get truly random jokes using Fisher-Yates shuffle
-      const shuffled = [...jokes];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      // Get two completely random jokes with equal probability
+      // Use crypto.getRandomValues for better randomness if available, otherwise Math.random
+      const getRandomIndex = (max: number): number => {
+        if (max <= 0) return 0;
+        // Use crypto API for better randomness if available
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+          const array = new Uint32Array(1);
+          crypto.getRandomValues(array);
+          return array[0] % max;
+        }
+        return Math.floor(Math.random() * max);
+      };
+      
+      // Ensure we get two different jokes
+      let index1 = getRandomIndex(jokes.length);
+      let index2 = getRandomIndex(jokes.length);
+      
+      // If same index, pick a different one
+      if (index1 === index2 && jokes.length > 1) {
+        index2 = (index1 + 1) % jokes.length; // Simple wrap-around to ensure different
+        // But also add some randomness
+        const offset = getRandomIndex(jokes.length - 1) + 1;
+        index2 = (index1 + offset) % jokes.length;
       }
-      const selected1 = shuffled[0];
-      const selected2 = shuffled[1];
+      
+      const selected1 = jokes[index1];
+      const selected2 = jokes[index2];
 
       setJoke1(selected1);
       setJoke2(selected2);
@@ -170,7 +189,7 @@ export default function ELORanking() {
             className="choose-btn"
             disabled={loading || showElo}
           >
-            Choose This One
+            <FaCheck /> Choose This One
           </button>
         </div>
 
@@ -189,7 +208,7 @@ export default function ELORanking() {
             className="choose-btn"
             disabled={loading || showElo}
           >
-            Choose This One
+            <FaCheck /> Choose This One
           </button>
         </div>
       </div>
@@ -199,7 +218,7 @@ export default function ELORanking() {
         className="not-allowed-btn"
         disabled={loading || showElo}
       >
-        Not Allowed to Rank (Didn't Experience)
+        <FaTimes /> Not Allowed to Rank (Didn't Experience)
       </button>
 
       <button 
@@ -207,7 +226,7 @@ export default function ELORanking() {
         className="skip-btn"
         disabled={loading || showElo}
       >
-        Skip This Comparison
+        <FaForward /> Skip This Comparison
       </button>
     </div>
   );

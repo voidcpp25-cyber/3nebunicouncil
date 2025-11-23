@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { PendingJoke } from '../types';
+import { FaCheck } from 'react-icons/fa';
 
 export default function PendingJokes() {
   const [pendingJokes, setPendingJokes] = useState<PendingJoke[]>([]);
@@ -166,7 +167,7 @@ export default function PendingJokes() {
                     disabled={loading || currentUser !== 'nicky'}
                     className="approve-btn"
                   >
-                    Approve as Nicky
+                    <FaCheck /> Approve as Nicky
                   </button>
                 )}
                 {!joke.approved_by_jess && (
@@ -175,7 +176,7 @@ export default function PendingJokes() {
                     disabled={loading || currentUser !== 'jess'}
                     className="approve-btn"
                   >
-                    Approve as Jess
+                    <FaCheck /> Approve as Jess
                   </button>
                 )}
                 {!joke.approved_by_levi && (
@@ -184,11 +185,11 @@ export default function PendingJokes() {
                     disabled={loading || currentUser !== 'levi'}
                     className="approve-btn"
                   >
-                    Approve as Levi
+                    <FaCheck /> Approve as Levi
                   </button>
                 )}
                 {((joke.approved_by_nicky ? 1 : 0) + (joke.approved_by_jess ? 1 : 0) + (joke.approved_by_levi ? 1 : 0) >= 2) && (
-                  <p className="fully-approved">✓ Approved by 2+ people and added to official list!</p>
+                  <p className="fully-approved">✅ Approved by 2+ people and added to official list!</p>
                 )}
               </div>
             </div>

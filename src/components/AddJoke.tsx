@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { FaCheck } from 'react-icons/fa';
 
 export default function AddJoke() {
   const [jokeText, setJokeText] = useState('');
@@ -84,7 +85,7 @@ export default function AddJoke() {
         </div>
 
         <button type="submit" disabled={loading} className="submit-btn">
-          {loading ? 'Submitting...' : 'Submit Joke'}
+          {loading ? 'Submitting...' : <><FaCheck /> Submit Joke</>}
         </button>
       </form>
     </div>

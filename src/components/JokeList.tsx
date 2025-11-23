@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Joke, DetailedRating } from '../types';
+import EditRating from './EditRating';
+import { 
+  FaList, 
+  FaTrophy, 
+  FaStar, 
+  FaPlus, 
+  FaClock, 
+  FaDownload,
+  FaSync,
+  FaEdit,
+  FaLaugh,
+  FaGem,
+  FaBirthdayCake,
+  FaSearch,
+  FaStarHalfAlt,
+  FaCalendarAlt,
+  FaChartBar,
+  FaMedal
+} from 'react-icons/fa';
 
 interface JokeWithRatings extends Joke {
   elo_score?: number;
@@ -32,6 +51,7 @@ export default function JokeList() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('none');
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingJoke, setEditingJoke] = useState<Joke | null>(null);
 
   useEffect(() => {
     fetchJokesWithRatings();
@@ -212,6 +232,26 @@ export default function JokeList() {
     return value.toFixed(1);
   };
 
+  const hasRatings = (joke: JokeWithRatings): boolean => {
+    // Show edit button if joke has any ratings (not just user's)
+    return (joke.rating_count !== undefined && joke.rating_count > 0) || 
+           joke.avg_overall_score !== undefined ||
+           joke.elo_score !== undefined;
+  };
+
+  const handleEditRating = (joke: JokeWithRatings) => {
+    setEditingJoke(joke);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingJoke(null);
+  };
+
+  const handleRatingUpdated = () => {
+    fetchJokesWithRatings(); // Refresh the list after rating is updated
+    setEditingJoke(null);
+  };
+
   if (loading) {
     return (
       <div className="joke-list">
@@ -242,7 +282,7 @@ export default function JokeList() {
             className="refresh-btn"
             disabled={loading}
           >
-            Refresh
+            <FaSync /> Refresh
           </button>
           <div className="sort-controls">
             <label htmlFor="sort-select">Sort by:</label>
@@ -278,49 +318,49 @@ export default function JokeList() {
                 <div className="joke-stats">
                   {joke.elo_score !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">ELO:</span>
+                      <span className="stat-label"><FaMedal /> ELO:</span>
                       <span className="stat-value">{joke.elo_score}</span>
                     </div>
                   )}
                   {joke.avg_overall_score !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Overall Score:</span>
+                      <span className="stat-label"><FaChartBar /> Overall Score:</span>
                       <span className="stat-value">{formatRating(joke.avg_overall_score)}</span>
                     </div>
                   )}
                   {joke.avg_funniness !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Funniness:</span>
+                      <span className="stat-label"><FaLaugh /> Funniness:</span>
                       <span className="stat-value">{formatRating(joke.avg_funniness)}</span>
                     </div>
                   )}
                   {joke.avg_relevance !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Relevance:</span>
+                      <span className="stat-label"><FaTrophy /> Relevance:</span>
                       <span className="stat-value">{formatRating(joke.avg_relevance)}</span>
                     </div>
                   )}
                   {joke.avg_iconicness !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Iconic-ness:</span>
+                      <span className="stat-label"><FaStar /> Iconic-ness:</span>
                       <span className="stat-value">{formatRating(joke.avg_iconicness)}</span>
                     </div>
                   )}
                   {joke.avg_quality !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Quality:</span>
+                      <span className="stat-label"><FaGem /> Quality:</span>
                       <span className="stat-value">{formatRating(joke.avg_quality)}</span>
                     </div>
                   )}
                   {joke.avg_oldness !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Oldness:</span>
+                      <span className="stat-label"><FaBirthdayCake /> Oldness:</span>
                       <span className="stat-value">{formatRating(joke.avg_oldness)}</span>
                     </div>
                   )}
                   {joke.avg_overall_quality !== undefined && (
                     <div className="stat-item">
-                      <span className="stat-label">Overall Quality:</span>
+                      <span className="stat-label"><FaStarHalfAlt /> Overall Quality:</span>
                       <span className="stat-value">{formatRating(joke.avg_overall_quality)}</span>
                     </div>
                   )}
@@ -331,10 +371,24 @@ export default function JokeList() {
                     </div>
                   )}
                 </div>
+                <button 
+                  onClick={() => handleEditRating(joke)}
+                  className="edit-rating-btn"
+                >
+                  <FaEdit /> {hasRatings(joke) ? 'Edit Rating' : 'Add Rating'}
+                </button>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {editingJoke && (
+        <EditRating
+          joke={editingJoke}
+          onClose={handleCloseEdit}
+          onUpdate={handleRatingUpdated}
+        />
       )}
     </div>
   );

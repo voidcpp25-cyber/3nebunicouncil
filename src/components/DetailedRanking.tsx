@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Joke } from '../types';
+import { 
+  FaLaugh, 
+  FaTrophy, 
+  FaStar, 
+  FaCalendarAlt, 
+  FaGem, 
+  FaBirthdayCake, 
+  FaSearch, 
+  FaStarHalfAlt,
+  FaCheck,
+  FaTimes,
+  FaForward
+} from 'react-icons/fa';
 
 export default function DetailedRanking() {
   const [currentJoke, setCurrentJoke] = useState<Joke | null>(null);
@@ -115,43 +128,59 @@ export default function DetailedRanking() {
   const handleSubmit = async () => {
     if (!currentJoke) return;
 
+    setLoading(true);
+    setMessage('');
+
     const overallScore = calculateOverall();
-    const ratingData = {
+    
+    // Ensure all values are properly formatted as decimals
+    const ratingData: any = {
       joke_id: currentJoke.id,
-      funniness: Number(ratings.funniness.toFixed(1)),
-      relevance: Number(ratings.relevance.toFixed(1)),
-      iconicness: Number(ratings.iconicness.toFixed(1)),
-      how_lost: Number(ratings.how_lost.toFixed(1)),
-      quality: Number(ratings.quality.toFixed(1)),
-      oldness: Number(ratings.oldness.toFixed(1)),
-      decipherability: Number(ratings.decipherability.toFixed(1)),
-      overall_quality: Number(ratings.overall_quality.toFixed(1)),
-      overall_score: overallScore,
-      updated_at: new Date().toISOString(),
+      funniness: parseFloat(ratings.funniness.toFixed(1)),
+      relevance: parseFloat(ratings.relevance.toFixed(1)),
+      iconicness: parseFloat(ratings.iconicness.toFixed(1)),
+      how_lost: parseFloat(ratings.how_lost.toFixed(1)),
+      quality: parseFloat(ratings.quality.toFixed(1)),
+      oldness: parseFloat(ratings.oldness.toFixed(1)),
+      decipherability: parseFloat(ratings.decipherability.toFixed(1)),
+      overall_quality: parseFloat(ratings.overall_quality.toFixed(1)),
+      overall_score: parseFloat(overallScore.toFixed(2)),
     };
 
     try {
       let ratingId: string;
       
       if (existingRatingId) {
-        // Update existing rating
+        // Update existing rating - include updated_at
+        ratingData.updated_at = new Date().toISOString();
         const { error } = await supabase
           .from('detailed_ratings')
           .update(ratingData)
           .eq('id', existingRatingId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw new Error(error.message || 'Failed to update rating');
+        }
         ratingId = existingRatingId;
-        setMessage('Rating updated! Loading next joke...');
+        setMessage('✅ Rating updated! Loading next joke...');
       } else {
-        // Create new rating
+        // Create new rating - don't include updated_at, let DB set defaults
         const { data, error } = await supabase
           .from('detailed_ratings')
           .insert(ratingData)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw new Error(error.message || 'Failed to submit rating');
+        }
+        
+        if (!data) {
+          throw new Error('No data returned from insert');
+        }
+        
         ratingId = data.id;
         
         // Store in localStorage
@@ -160,15 +189,18 @@ export default function DetailedRanking() {
         localStorage.setItem('rated_jokes', JSON.stringify(ratedJokes));
         
         setExistingRatingId(ratingId);
-        setMessage('Rating submitted! Loading next joke...');
+        setMessage('✅ Rating submitted! Loading next joke...');
       }
 
       setTimeout(() => {
         fetchRandomJoke();
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting rating:', error);
-      setMessage('Error submitting rating. Please try again.');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      setMessage(`❌ Error: ${errorMessage}. Please try again.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -214,7 +246,7 @@ export default function DetailedRanking() {
 
       <div className="ratings-container">
         <div className="rating-item">
-          <label>Funniness (1-10)</label>
+          <label><FaLaugh /> Funniness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -240,7 +272,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Relevance (1-10)</label>
+          <label><FaTrophy /> Relevance (1-10)</label>
           <input
             type="range"
             min="1"
@@ -266,7 +298,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Iconic-ness (1-10)</label>
+          <label><FaStar /> Iconic-ness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -292,7 +324,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>How Lost It Would Have Been (1-10)</label>
+          <label><FaCalendarAlt /> How Lost It Would Have Been (1-10)</label>
           <input
             type="range"
             min="1"
@@ -318,7 +350,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Quality (1-10)</label>
+          <label><FaGem /> Quality (1-10)</label>
           <input
             type="range"
             min="1"
@@ -344,7 +376,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Oldness (1-10)</label>
+          <label><FaBirthdayCake /> Oldness (1-10)</label>
           <input
             type="range"
             min="1"
@@ -370,7 +402,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Decipherability (1-10) - Not included in overall</label>
+          <label><FaSearch /> Decipherability (1-10) - Not included in overall</label>
           <input
             type="range"
             min="1"
@@ -396,7 +428,7 @@ export default function DetailedRanking() {
         </div>
 
         <div className="rating-item">
-          <label>Overall Quality (1-10) - Not included in overall score</label>
+          <label><FaStarHalfAlt /> Overall Quality (1-10) - Not included in overall score</label>
           <input
             type="range"
             min="1"
@@ -435,13 +467,13 @@ export default function DetailedRanking() {
 
       <div className="actions">
         <button onClick={handleSubmit} className="submit-btn" disabled={loading}>
-          {existingRatingId ? 'Update Rating' : 'Submit Rating'}
+          {existingRatingId ? <><FaCheck /> Update Rating</> : <><FaCheck /> Submit Rating</>}
         </button>
         <button onClick={handleNotAllowed} className="not-allowed-btn" disabled={loading}>
-          Not Allowed to Rank (Didn't Experience)
+          <FaTimes /> Not Allowed to Rank (Didn't Experience)
         </button>
         <button onClick={fetchRandomJoke} className="skip-btn" disabled={loading}>
-          Skip This Joke
+          <FaForward /> Skip This Joke
         </button>
       </div>
     </div>

@@ -5,6 +5,14 @@ import DetailedRanking from './components/DetailedRanking';
 import AddJoke from './components/AddJoke';
 import PendingJokes from './components/PendingJokes';
 import ImportJokes from './components/ImportJokes';
+import { 
+  FaList, 
+  FaTrophy, 
+  FaStar, 
+  FaPlus, 
+  FaClock, 
+  FaDownload 
+} from 'react-icons/fa';
 import './App.css';
 
 type Tab = 'list' | 'elo' | 'detailed' | 'add' | 'pending' | 'import';
@@ -21,37 +29,37 @@ function App() {
             className={activeTab === 'list' ? 'active' : ''}
             onClick={() => setActiveTab('list')}
           >
-            Jokes List
+            <FaList /> Jokes List
           </button>
           <button
             className={activeTab === 'elo' ? 'active' : ''}
             onClick={() => setActiveTab('elo')}
           >
-            ELO Ranking
+            <FaTrophy /> ELO Ranking
           </button>
           <button
             className={activeTab === 'detailed' ? 'active' : ''}
             onClick={() => setActiveTab('detailed')}
           >
-            Detailed Ranking
+            <FaStar /> Detailed Ranking
           </button>
           <button
             className={activeTab === 'add' ? 'active' : ''}
             onClick={() => setActiveTab('add')}
           >
-            Add Joke
+            <FaPlus /> Add Joke
           </button>
           <button
             className={activeTab === 'pending' ? 'active' : ''}
             onClick={() => setActiveTab('pending')}
           >
-            Pending Approvals
+            <FaClock /> Pending Approvals
           </button>
           <button
             className={activeTab === 'import' ? 'active' : ''}
             onClick={() => setActiveTab('import')}
           >
-            Import Jokes
+            <FaDownload /> Import Jokes
           </button>
         </nav>
       </header>
