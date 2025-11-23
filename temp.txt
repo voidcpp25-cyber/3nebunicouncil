@@ -1,0 +1,30 @@
+
+  const filteredJokes = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sortedAllJokes;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return sortedAllJokes.filter(j => {
+      const text = j.text.toLowerCase();
+      return terms.some(t => text.includes(t));
+    });
+  }, [searchQuery, sortedAllJokes]);
+
+  const format = (v?: number) => v === undefined ? 'N/A' : v.toFixed(1);
+  const formatDuration = (since: Date | null) => {
+    if (!since) return '–';
+    const ms = Date.now() - since.getTime();
+    if (ms < 60_000) return 'just now';
+    const mins = Math.floor(ms / 60000);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  };
+
+  if (loading) return <p>Loading jokes...</p>;
+
+  return (
+    <div className="joke-list">
+      <div className="list-header">
+        <h2>Inside Jokes List</h2>

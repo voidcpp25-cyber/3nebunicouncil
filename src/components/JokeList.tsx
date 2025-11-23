@@ -160,18 +160,6 @@ export default function JokeList() {
   }, [searchQuery, sortedAllJokes]);
 
   const format = (v?: number) => v === undefined ? 'N/A' : v.toFixed(1);
-  const formatDuration = (since: Date | null) => {
-    if (!since) return '–';
-    const ms = Date.now() - since.getTime();
-    if (ms < 60_000) return 'just now';
-    const mins = Math.floor(ms / 60000);
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h`;
-    const days = Math.floor(hours / 24);
-    return `${days}d`;
-  };
-
   if (loading) return <p>Loading jokes...</p>;
 
   return (
@@ -287,3 +275,4 @@ export default function JokeList() {
     </div>
   );
 }
+
