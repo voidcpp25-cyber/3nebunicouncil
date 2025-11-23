@@ -21,15 +21,6 @@ interface JokeWithRatings extends Joke {
   rating_count?: number;
 }
 
-interface EloUpdate {
-  id: string;
-  joke_id: string;
-  joke_text: string;
-  rank: number;
-  elo_score: number;
-  created_at: string;
-}
-
 type SortOption =
   | 'none'
   | 'elo'
@@ -46,15 +37,11 @@ export default function JokeList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('none');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [eloUpdates, setEloUpdates] = useState<EloUpdate[]>([]);
-  const [topSince, setTopSince] = useState<Date | null>(null);
-  const [showUpdates, setShowUpdates] = useState(true);
   const [loading, setLoading] = useState(true);
   const [editingJoke, setEditingJoke] = useState<Joke | null>(null);
 
   useEffect(() => {
     fetchJokes();
-    fetchEloUpdates();
   }, []);
 
   async function fetchJokes() {
@@ -116,29 +103,11 @@ export default function JokeList() {
         };
       });
 
-      // Hide jokes with no ratings to avoid empty data
-      const withVotes = combined.filter(j => (j.rating_count ?? 0) > 0);
-      setAllJokes(withVotes);
+      setAllJokes(combined);
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function fetchEloUpdates() {
-    try {
-      const { data, error } = await supabase
-        .from('elo_updates')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      setEloUpdates(data || []);
-      const latestTop = (data || []).find(u => u.rank === 1);
-      if (latestTop) setTopSince(new Date(latestTop.created_at));
-    } catch (err) {
-      console.error('Fetch updates error:', err);
     }
   }
 
@@ -181,9 +150,13 @@ export default function JokeList() {
   }, [sortedAllJokes]);
 
   const filteredJokes = useMemo(() => {
-    if (!searchQuery.trim()) return sortedAllJokes;
-    const q = searchQuery.toLowerCase();
-    return sortedAllJokes.filter(j => j.text.toLowerCase().includes(q));
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sortedAllJokes;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return sortedAllJokes.filter(j => {
+      const text = j.text.toLowerCase();
+      return terms.some(t => text.includes(t));
+    });
   }, [searchQuery, sortedAllJokes]);
 
   const format = (v?: number) => v === undefined ? 'N/A' : v.toFixed(1);
@@ -241,42 +214,8 @@ export default function JokeList() {
             {sortDir === 'asc' ? 'Asc' : 'Desc'}
           </button>
 
-          <button
-            className="updates-toggle-btn"
-            onClick={() => setShowUpdates(v => !v)}
-          >
-            {showUpdates ? 'Hide updates' : 'Show recent updates'}
-          </button>
         </div>
       </div>
-
-      {showUpdates && (
-        <div className="updates-panel">
-          <div className="updates-header">
-            <h3>Recent leaderboard changes</h3>
-            <div className="top-duration">
-              Current #1 for {formatDuration(topSince)}
-            </div>
-          </div>
-          {eloUpdates.length === 0 && <p className="muted">No changes yet.</p>}
-          <ul>
-            {eloUpdates.map((item) => (
-              <li key={`${item.id}-${item.created_at}`}>
-                <div className="update-title">
-                  <strong>{item.joke_text.toUpperCase()}</strong> has taken <span className="update-rank-badge">#{item.rank}</span> on the ELO leaderboard.
-                </div>
-                <div className="update-meta">
-                  <span>{new Date(item.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                  <span className="update-rank">#{item.rank}</span>
-                  {item.elo_score !== undefined && (
-                    <span className="update-score">ELO: {item.elo_score}</span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <div className="jokes-grid">
         {filteredJokes.map((joke) => {
@@ -334,25 +273,6 @@ export default function JokeList() {
           );
         })}
       </div>
-
-      <aside className="updates-panel">
-        <h3>Recent #1 Changes</h3>
-        {eloUpdates.length === 0 && <p className="muted">No changes yet.</p>}
-        <ul>
-          {eloUpdates.map((item) => (
-            <li key={item.id}>
-              <div className="update-title">
-                <strong>{item.joke_text}</strong> has taken <span className="update-rank-badge">#{item.rank}</span> on the ELO leaderboard.
-              </div>
-              <div className="update-meta">
-                <span>{new Date(item.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                <span className="update-rank">#{item.rank}</span>
-                <span className="update-score">ELO: {item.elo_score}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </aside>
 
       {editingJoke && (
         <EditRating

@@ -839,21 +839,6 @@ main {
   border-color: #3a3a3a;
 }
 
-.updates-toggle-btn {
-  padding: 10px 14px;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  background: #1a1a1a;
-  color: #ffffff;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.updates-toggle-btn:hover {
-  background: #252525;
-  border-color: #3a3a3a;
-}
 .jokes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -978,85 +963,6 @@ main {
   font-size: 1rem;
 }
 
-.updates-panel {
-  margin-top: 16px;
-  background: #111111;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.updates-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.updates-panel h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #ffffff;
-}
-
-.top-duration {
-  color: #b0b0b0;
-  font-size: 0.9rem;
-}
-
-.updates-panel ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.updates-panel li {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 10px;
-}
-
-.update-title {
-  font-weight: 600;
-  color: #ffffff;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
-}
-
-.update-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: #b0b0b0;
-  font-size: 0.8rem;
-}
-
-.update-score {
-  color: #4ade80;
-}
-
-.update-rank {
-  color: #93c5fd;
-}
-
-.update-rank-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(147, 197, 253, 0.15);
-  color: #bfdbfe;
-  border: 1px solid rgba(147, 197, 253, 0.35);
-  margin: 0 4px;
-}
-
-.muted {
-  color: #777777;
-  font-size: 0.9rem;
-}
 
 /* Edit Rating Modal */
 .edit-rating-modal {
@@ -1610,4 +1516,37 @@ main {
   .overall-score strong {
     font-size: 1.3rem;
   }
+}
+
+/* Updates tab */
+.updates-feed .list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.updates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.update-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.update-card .update-title {
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.update-card .update-meta {
+  color: #b0b0b0;
+  font-size: 0.85rem;
 }

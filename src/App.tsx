@@ -5,17 +5,19 @@ import DetailedRanking from './components/DetailedRanking';
 import AddJoke from './components/AddJoke';
 import PendingJokes from './components/PendingJokes';
 import ImportJokes from './components/ImportJokes';
+import UpdatesFeed from './components/UpdatesFeed';
 import { 
   FaList, 
   FaTrophy, 
   FaStar, 
   FaPlus, 
   FaClock, 
-  FaDownload 
+  FaDownload,
+  FaBell 
 } from 'react-icons/fa';
 import './App.css';
 
-type Tab = 'list' | 'elo' | 'detailed' | 'add' | 'pending' | 'import';
+type Tab = 'list' | 'elo' | 'detailed' | 'add' | 'pending' | 'import' | 'updates';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('list');
@@ -61,6 +63,12 @@ function App() {
           >
             <FaDownload /> Import Jokes
           </button>
+          <button
+            className={activeTab === 'updates' ? 'active' : ''}
+            onClick={() => setActiveTab('updates')}
+          >
+            <FaBell /> Updates
+          </button>
         </nav>
       </header>
 
@@ -71,6 +79,7 @@ function App() {
         {activeTab === 'add' && <AddJoke />}
         {activeTab === 'pending' && <PendingJokes />}
         {activeTab === 'import' && <ImportJokes />}
+        {activeTab === 'updates' && <UpdatesFeed />}
       </main>
     </div>
   );
