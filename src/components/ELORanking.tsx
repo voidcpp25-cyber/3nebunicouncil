@@ -8,7 +8,6 @@ export default function ELORanking() {
   const [jokes, setJokes] = useState<Joke[]>([]);
   const [joke1, setJoke1] = useState<Joke | null>(null);
   const [joke2, setJoke2] = useState<Joke | null>(null);
-
   const [elo1, setElo1] = useState(1500);
   const [elo2, setElo2] = useState(1500);
 
@@ -16,11 +15,12 @@ export default function ELORanking() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // ------------------------------
-  // Fetch all jokes ONCE
-  // ------------------------------
+  // -------------------------------
+  // Load all jokes once
+  // -------------------------------
   const loadAllJokes = async () => {
     setLoading(true);
+
     const { data, error } = await supabase
       .from('jokes')
       .select('*')
@@ -28,7 +28,7 @@ export default function ELORanking() {
 
     if (error) {
       console.error(error);
-      setMessage("Couldn't load jokes.");
+      setMessage('Error loading jokes.');
       setLoading(false);
       return;
     }
@@ -41,72 +41,72 @@ export default function ELORanking() {
     loadAllJokes();
   }, []);
 
-  // ------------------------------
-  // Given joke IDs → fetch their ELO
-  // ------------------------------
+  // -------------------------------
+  // Fetch elo for joke
+  // -------------------------------
   const fetchElo = async (jokeId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('elo_ratings')
       .select('elo_score')
       .eq('joke_id', jokeId)
       .maybeSingle();
 
+    if (error) console.error(error);
+
     return data?.elo_score ?? 1500;
   };
 
-  // ------------------------------
+  // -------------------------------
   // Pick two unique random jokes
-  // ------------------------------
-  const selectRandomPair = async () => {
+  // -------------------------------
+  const loadNewPair = async () => {
     if (jokes.length < 2) {
-      setMessage('Not enough jokes to rank.');
+      setMessage('Not enough jokes to compare.');
       return;
     }
 
+    setLoading(true);
     setShowElo(false);
     setMessage('');
-    setLoading(true);
 
-    let j1 = jokes[Math.floor(Math.random() * jokes.length)];
-    let j2 = jokes[Math.floor(Math.random() * jokes.length)];
+    let one = jokes[Math.floor(Math.random() * jokes.length)];
+    let two = jokes[Math.floor(Math.random() * jokes.length)];
 
-    while (j1.id === j2.id) {
-      j2 = jokes[Math.floor(Math.random() * jokes.length)];
+    while (one.id === two.id) {
+      two = jokes[Math.floor(Math.random() * jokes.length)];
     }
 
-    const e1 = await fetchElo(j1.id);
-    const e2 = await fetchElo(j2.id);
+    const e1 = await fetchElo(one.id);
+    const e2 = await fetchElo(two.id);
 
-    setJoke1(j1);
-    setJoke2(j2);
+    setJoke1(one);
+    setJoke2(two);
     setElo1(e1);
     setElo2(e2);
 
     setLoading(false);
   };
 
-  // Load first pair when jokes list loads
   useEffect(() => {
-    if (jokes.length >= 2) selectRandomPair();
+    if (jokes.length >= 2) loadNewPair();
   }, [jokes]);
 
-  // ------------------------------
-  // Perform the ELO calculation + DB update
-  // ------------------------------
-  const submitVote = async (winnerId: string) => {
+  // -------------------------------
+  // Update ELO in database
+  // -------------------------------
+  const updateElo = async (winnerId: string) => {
     if (!joke1 || !joke2) return;
 
     setLoading(true);
 
-    const isJ1Winner = winnerId === joke1.id;
-
-    const winnerElo = isJ1Winner ? elo1 : elo2;
-    const loserElo = isJ1Winner ? elo2 : elo1;
+    const isWinnerJ1 = winnerId === joke1.id;
+    const winnerElo = isWinnerJ1 ? elo1 : elo2;
+    const loserElo = isWinnerJ1 ? elo2 : elo1;
 
     const { newWinnerElo, newLoserElo } = calculateElo(winnerElo, loserElo);
 
-    // Update local display
-    if (isJ1Winner) {
+    // Update UI immediately
+    if (isWinnerJ1) {
       setElo1(newWinnerElo);
       setElo2(newLoserElo);
     } else {
@@ -116,35 +116,51 @@ export default function ELORanking() {
 
     setShowElo(true);
 
-    // Update in database
-    await supabase.from('elo_ratings').upsert({
-      joke_id: isJ1Winner ? joke1.id : joke2.id,
-      elo_score: newWinnerElo,
-      updated_at: new Date().toISOString()
-    });
+    // Update DB (IMPORTANT: onConflict ensures UPDATE not INSERT)
+    const { error: wErr } = await supabase
+      .from('elo_ratings')
+      .upsert(
+        {
+          joke_id: winnerId,
+          elo_score: newWinnerElo,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'joke_id' }
+      );
 
-    await supabase.from('elo_ratings').upsert({
-      joke_id: isJ1Winner ? joke2.id : joke1.id,
-      elo_score: newLoserElo,
-      updated_at: new Date().toISOString()
-    });
+    if (wErr) console.error('Winner ELO update failed:', wErr);
+
+    const loserId = isWinnerJ1 ? joke2.id : joke1.id;
+
+    const { error: lErr } = await supabase
+      .from('elo_ratings')
+      .upsert(
+        {
+          joke_id: loserId,
+          elo_score: newLoserElo,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'joke_id' }
+      );
+
+    if (lErr) console.error('Loser ELO update failed:', lErr);
 
     setMessage('Updated! Loading next pair...');
 
-    setTimeout(() => selectRandomPair(), 600);
+    setTimeout(() => {
+      loadNewPair();
+    }, 700);
   };
 
-  const skipOrNotAllowed = async () => {
+  // -------------------------------
+  // Button actions
+  // -------------------------------
+  const handleNotAllowed = () => {
     setMessage('');
-    selectRandomPair();
+    loadNewPair();
   };
 
-  // ------------------------------
-  // UI
-  // ------------------------------
-  if (!joke1 || !joke2) {
-    return <p>Loading...</p>;
-  }
+  if (!joke1 || !joke2) return <p>Loading...</p>;
 
   return (
     <div className="elo-ranking">
@@ -157,16 +173,12 @@ export default function ELORanking() {
         <div className="joke-card">
           <div className="joke-text">{joke1.text}</div>
 
-          {showElo ? (
-            <div className="elo-score">ELO: {elo1}</div>
-          ) : (
-            <div className="elo-score-placeholder">ELO: ???</div>
-          )}
+          {showElo ? <div className="elo-score">ELO: {elo1}</div> : <div className="elo-score-placeholder">ELO: ???</div>}
 
           <button
-            disabled={loading || showElo}
-            onClick={() => submitVote(joke1.id)}
             className="choose-btn"
+            disabled={loading || showElo}
+            onClick={() => updateElo(joke1.id)}
           >
             <FaCheck /> Choose
           </button>
@@ -178,16 +190,12 @@ export default function ELORanking() {
         <div className="joke-card">
           <div className="joke-text">{joke2.text}</div>
 
-          {showElo ? (
-            <div className="elo-score">ELO: {elo2}</div>
-          ) : (
-            <div className="elo-score-placeholder">ELO: ???</div>
-          )}
+          {showElo ? <div className="elo-score">ELO: {elo2}</div> : <div className="elo-score-placeholder">ELO: ???</div>}
 
           <button
-            disabled={loading || showElo}
-            onClick={() => submitVote(joke2.id)}
             className="choose-btn"
+            disabled={loading || showElo}
+            onClick={() => updateElo(joke2.id)}
           >
             <FaCheck /> Choose
           </button>
@@ -197,7 +205,7 @@ export default function ELORanking() {
       <button
         className="not-allowed-btn"
         disabled={loading || showElo}
-        onClick={skipOrNotAllowed}
+        onClick={handleNotAllowed}
       >
         <FaTimes /> Not Allowed
       </button>
@@ -205,7 +213,7 @@ export default function ELORanking() {
       <button
         className="skip-btn"
         disabled={loading || showElo}
-        onClick={skipOrNotAllowed}
+        onClick={handleNotAllowed}
       >
         <FaForward /> Skip
       </button>
